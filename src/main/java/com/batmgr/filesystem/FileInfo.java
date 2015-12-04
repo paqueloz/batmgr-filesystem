@@ -36,14 +36,17 @@ import javax.xml.bind.DatatypeConverter;
 @SuppressWarnings("nls")
 public class FileInfo {
     
-    private boolean  initialized = false;
-    private String   name;
-    private long     size;
-    private FileTime lastModif;          // Round milliseconds down to 0
-    private String   hash;               // SHA-256
-    private String   asLine;             // cache for toString
-    private int      flags;              // 4 hex digits
+    private static final int FLAG_REMOVED = 1;
 
+    private boolean          initialized  = false;
+    private String           name;
+    private long             size;
+    private FileTime         lastModif;           // Round milliseconds down to 0
+    private String           hash;                // SHA-256
+    private static final int HASH_BYTES   = 32;   // length of the hash
+    private String           asLine;              // cache for toString
+    private int              flags;               // 4 hex digits (2 bytes)
+                                                   
     /**
      * Default constructor : the object exists but is not initialized
      */
@@ -85,7 +88,7 @@ public class FileInfo {
         } catch (IllegalArgumentException e) {
             // exception handled below
         }
-        if (hex == null || hex.length != 32) {
+        if (hex == null || hex.length != HASH_BYTES) {
             throw new IllegalArgumentException(String.format("%s is not a valid SHA-256 signature", fields[0]));
         }
         hash = fields[0];
@@ -161,6 +164,30 @@ public class FileInfo {
     public FileTime getLastModif()
     {
         return lastModif;
+    }
+    
+    /**
+     * Compute the flags location
+     * @param loc beginning of the entry
+     * @return loc + appropriate offset
+     */
+    public long getFlagsLocation(Integer loc) {
+        return loc + 2 * HASH_BYTES + 1;
+    }
+    
+    /**
+     * Change flags to mark file as removed
+     */
+    public void setRemovedFlag() {
+        flags |= FLAG_REMOVED;
+    }
+    
+    /**
+     * Return the current value of the flags
+     * @return 4 hex digits
+     */
+    public String getFlagsString() {
+        return String.format("%04X", flags);
     }
 
 }

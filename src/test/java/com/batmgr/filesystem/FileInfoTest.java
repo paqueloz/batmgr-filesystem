@@ -134,4 +134,16 @@ public class FileInfoTest {
         FileInfo fi = new FileInfo("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65B00;0000;1234;2001-05-20T19:38:29Z;.");
         assertEquals(fi.toString(), "4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65B00;0000;1234;2001-05-20T19:38:29Z;.");
     }
+    
+    @Test
+    public void test_getFlagsLocation() {
+        assertEquals(0x7a, new FileInfo().getFlagsLocation(0x39));
+    }
+    
+    @Test
+    public void test_getFlagsString() {
+        FileInfo fi = new FileInfo();
+        fi.setRemovedFlag();
+        assertEquals("0001", fi.getFlagsString());
+    }
 }
