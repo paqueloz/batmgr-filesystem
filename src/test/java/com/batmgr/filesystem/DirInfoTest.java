@@ -24,6 +24,8 @@
 package com.batmgr.filesystem;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -115,9 +117,10 @@ public class DirInfoTest {
         Path testPath = testRoot.resolve("tst1");
         cleanupDir(testPath);
         Files.copy(testRoot.resolve("index-good.txt"), testPath.resolve(DirInfo.IDXFILE));
-        Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
         DirInfo dirInfo = new DirInfo(testPath);
+        Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
         dirInfo.addIfNeeded(testPath.resolve(sampleFile));
+        assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
         assertEquals(476, Files.size(testPath.resolve(DirInfo.IDXFILE)));
         // now modify sampleFile
         try (FileChannel fc = FileChannel.open(testPath.resolve(sampleFile), StandardOpenOption.WRITE)) {
@@ -126,6 +129,7 @@ public class DirInfoTest {
         }
         // add to index again
         dirInfo.addIfNeeded(testPath.resolve(sampleFile));
+        assertFalse(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
         assertEquals(582, Files.size(testPath.resolve(DirInfo.IDXFILE)));
         try (FileChannel fc = FileChannel.open(testPath.resolve(DirInfo.IDXFILE), StandardOpenOption.READ)) {
             fc.position(new FileInfo().getFlagsLocation(370));

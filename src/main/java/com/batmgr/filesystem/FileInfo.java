@@ -35,25 +35,24 @@ import javax.xml.bind.DatatypeConverter;
  */
 @SuppressWarnings("nls")
 public class FileInfo {
-    
-    private static final int FLAG_REMOVED = 1;
 
+    private static final int FLAG_REMOVED = 1;
+    
     private boolean          initialized  = false;
     private String           name;
     private long             size;
     private FileTime         lastModif;           // Round milliseconds down to 0
     private String           hash;                // SHA-256
     private static final int HASH_BYTES   = 32;   // length of the hash
-    private String           asLine;              // cache for toString
     private int              flags;               // 4 hex digits (2 bytes)
-                                                   
+
     /**
      * Default constructor : the object exists but is not initialized
      */
     public FileInfo()
     {
     }
-    
+
     public FileInfo(String name, long size, FileTime lastModif, String hash, int flags)
     {
         this.name = name;
@@ -68,7 +67,7 @@ public class FileInfo {
         this.flags = flags;
         initialized = true;
     }
-    
+
     /**
      * @param line structured as SHA256;0000;size;YYYY-MM-DDTHH:MM:SS;name
      * @throws IllegalArgumentException
@@ -132,40 +131,37 @@ public class FileInfo {
         name = finLigne.toString();
         initialized = true;
     }
-
+    
     public String getHash() {
         if (!initialized) {
             throw new IllegalStateException(Constantes.OBJECT_NOT_INITIALIZED);
         }
         return hash;
     }
-
+    
     @Override
     public String toString() {
         if (!initialized) {
             return Constantes.OBJECT_NOT_INITIALIZED;
         }
-        if (asLine == null) {
-            asLine = String.format("%s;%04X;%d;%s;%s", hash, flags, Long.valueOf(size), lastModif.toString(), name);
-        }
-        return asLine;
+        return String.format("%s;%04X;%d;%s;%s", hash, flags, Long.valueOf(size), lastModif.toString(), name);
     }
-
+    
     public String getName()
     {
         return name;
     }
-    
+
     public long getSize()
     {
         return size;
     }
-
+    
     public FileTime getLastModif()
     {
         return lastModif;
     }
-    
+
     /**
      * Compute the flags location
      * @param loc beginning of the entry
@@ -174,12 +170,19 @@ public class FileInfo {
     public long getFlagsLocation(Integer loc) {
         return loc + 2 * HASH_BYTES + 1;
     }
-    
+
     /**
      * Change flags to mark file as removed
      */
     public void setRemovedFlag() {
         flags |= FLAG_REMOVED;
+    }
+
+    /**
+     * @return true if the removed flag is set
+     */
+    public boolean isRemovedFlagSet() {
+        return (flags & FLAG_REMOVED) != 0;
     }
     
     /**
@@ -189,5 +192,5 @@ public class FileInfo {
     public String getFlagsString() {
         return String.format("%04X", flags);
     }
-
+    
 }
