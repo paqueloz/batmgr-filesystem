@@ -47,20 +47,20 @@ import org.slf4j.LoggerFactory;
  * Manage the indexation of one directory
  */
 public class DirInfo {
-
-    private static final Logger    LOG          = LoggerFactory.getLogger(DirInfo.class);
     
+    private static final Logger    LOG          = LoggerFactory.getLogger(DirInfo.class);
+
     public static final String     IDXFILE      = ".index";
     public static final String     IDXCHARSET   = "UTF-8";
     private static final String    IDXSIGNATURE = "DIRECTORY INDEX - NO REAL DATA IN THIS FILE - VERSION 1";
-    
+
     private Map<String, FileInfo>  nameIndex;                                                               // key is file name
     private Map<String, FileInfo>  hashIndex;                                                               // key is content hash
     private Map<FileInfo, Integer> locations;                                                               // locations in index file
-
+                                                                                                             
     private Path                   path;
     private Path                   indexFile;
-
+    
     /**
      * Load the index in this directory
      * @param path
@@ -76,7 +76,7 @@ public class DirInfo {
         createIndexIfNeeded();
         readIndex();
     }
-    
+
     public void createIndexIfNeeded() throws IOException
     {
         if (Files.exists(indexFile)) {
@@ -86,7 +86,7 @@ public class DirInfo {
             writer.write(String.format("%s\r\n", IDXSIGNATURE));
         }
     }
-    
+
     /**
      * Read the index, one line per file
      * @throws IOException if the index doesn't exist or cannot be read
@@ -114,7 +114,7 @@ public class DirInfo {
             }
         }
     }
-    
+
     /**
      * Parse one line and add it to the index (unless it has flag removed).
      * @param line the input
@@ -142,7 +142,7 @@ public class DirInfo {
         hashIndex.put(fi.getHash(), fi);
         locations.put(fi, new Integer(start));
     }
-
+    
     /**
      * Adds file to the index if needed. <br>
      * Computing hash is expensive. <br>
@@ -155,7 +155,7 @@ public class DirInfo {
     public void addIfNeeded(Path p) throws IOException, NoSuchAlgorithmException
     {
         // always skip IDXFILE
-        if (p.getFileName().equals(IDXFILE)) {
+        if (p.getFileName().toString().equals(IDXFILE)) {
             return;
         }
         // compute properties
@@ -179,7 +179,7 @@ public class DirInfo {
         fileInfo = new FileInfo(name, size, lastModif, hash, 0);
         appendToIndex(fileInfo);
     }
-
+    
     /**
      * Append one line to the index. <br>
      * If the file was already present, flag the old entry. <br>
@@ -196,7 +196,7 @@ public class DirInfo {
         hashIndex.put(fileInfo.getHash(), fileInfo);
         locations.put(fileInfo, new Integer(location));
     }
-    
+
     /**
      * The entry is obsolete, update the flags but leave the file.
      * @param fileInfo entry to remove
@@ -218,7 +218,7 @@ public class DirInfo {
         hashIndex.remove(fileInfo.getHash());
         locations.remove(fileInfo);
     }
-
+    
     /**
      * Return the location of the file, -1 if unknown
      * @param fileName the target file name
@@ -233,7 +233,7 @@ public class DirInfo {
         }
         return locations.get(fi).intValue();
     }
-    
+
     /**
      * Look for file by signature
      * @param hash the target signature
