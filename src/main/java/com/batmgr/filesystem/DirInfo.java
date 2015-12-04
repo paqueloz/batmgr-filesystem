@@ -54,8 +54,8 @@ public class DirInfo {
     public static final String     IDXCHARSET   = "UTF-8";
     private static final String    IDXSIGNATURE = "DIRECTORY INDEX - NO REAL DATA IN THIS FILE - VERSION 1";
 
-    private Map<String, FileInfo>  nameIndex;                                                               // key is file name
-    private Map<String, FileInfo>  hashIndex;                                                               // key is content hash
+    private Map<String, FileInfo>  nameIndex;                                                               // key is file name (unique)
+    private Map<String, FileInfo>  hashIndex;                                                               // key is content hash (not unique)
     private Map<FileInfo, Integer> locations;                                                               // locations in index file
                                                                                                              
     private Path                   path;
@@ -135,11 +135,9 @@ public class DirInfo {
         if (nameIndex.containsKey(fi.getName())) {
             throw new InvalidIndexException(String.format("multiple occurrences of name %s in index", fi.getName()));
         }
-        if (isHashPresent(fi.getHash())) {
-            throw new InvalidIndexException(String.format("multiple occurrences of hash %s in index", fi.getHash()));
-        }
+        // several files can have the same hash
         nameIndex.put(fi.getName(), fi);
-        hashIndex.put(fi.getHash(), fi);
+        hashIndex.put(fi.getHash(), fi); // TODO use list
         locations.put(fi, new Integer(start));
     }
     
