@@ -23,6 +23,7 @@
  */
 package com.batmgr.filesystem;
 
+import java.awt.Toolkit;
 import java.nio.file.Paths;
 
 import org.slf4j.Logger;
@@ -32,9 +33,9 @@ import org.slf4j.LoggerFactory;
  * Creates indexes in a directory tree
  */
 public class Indexer {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
-
+    
     public static void main(String[] args)
     {
         DirChecker checker = new DirChecker();
@@ -43,5 +44,6 @@ public class Indexer {
         } catch (Throwable t) {
             LOG.error("program aborted", t);
         }
+        Toolkit.getDefaultToolkit().beep();
     }
 }
