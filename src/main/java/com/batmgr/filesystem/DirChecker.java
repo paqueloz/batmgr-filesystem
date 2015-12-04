@@ -53,6 +53,25 @@ public class DirChecker {
                 }
             }
         }
+        LOG.info(String.format("Folder %s indexed", path));
     }
     
+    /**
+     * Index a directory and all its subdirectories
+     * @param path directory to index
+     * @throws InvalidIndexException
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public void indexTree(Path path) throws NoSuchAlgorithmException, IOException, InvalidIndexException
+    {
+        indexFolder(path);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+            for (Path p : stream) { // ne peut pas utiliser stream.forEach à cause de l'IOException
+                if (Files.isDirectory(p)) {
+                    indexTree(p);
+                }
+            }
+        }
+    }
 }
