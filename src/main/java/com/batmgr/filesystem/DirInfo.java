@@ -39,6 +39,7 @@ import java.nio.file.attribute.FileTime;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,7 +165,7 @@ public class DirInfo {
         FileInfo fileInfo = nameIndex.get(name);
         if (fileInfo != null
             && fileInfo.getSize() == size
-            && fileInfo.getLastModif().compareTo(lastModif) == 0)
+            && fileInfo.getLastModif().compareTo(fileInfo.secondFileTime(lastModif)) == 0)
         {
             return; // same file
         }
@@ -240,5 +241,10 @@ public class DirInfo {
     public boolean isHashPresent(String hash)
     {
         return hashIndex.containsKey(hash);
+    }
+
+    public Set<FileInfo> getFiles()
+    {
+        return locations.keySet();
     }
 }

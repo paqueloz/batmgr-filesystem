@@ -35,9 +35,9 @@ import javax.xml.bind.DatatypeConverter;
  */
 @SuppressWarnings("nls")
 public class FileInfo {
-
-    private static final int FLAG_REMOVED = 1;
     
+    private static final int FLAG_REMOVED = 1;
+
     private boolean          initialized  = false;
     private String           name;
     private long             size;
@@ -45,21 +45,19 @@ public class FileInfo {
     private String           hash;                // SHA-256
     private static final int HASH_BYTES   = 32;   // length of the hash
     private int              flags;               // 4 hex digits (2 bytes)
-
+                                                   
     /**
      * Default constructor : the object exists but is not initialized
      */
     public FileInfo()
     {
     }
-
+    
     public FileInfo(String name, long size, FileTime lastModif, String hash, int flags)
     {
         this.name = name;
         this.size = size;
-        long millis = lastModif.toMillis();
-        long diff = millis % 1000;
-        this.lastModif = FileTime.fromMillis(millis - diff);
+        this.lastModif = secondFileTime(lastModif);
         this.hash = hash;
         if (flags < 0 || flags > 0xffff) {
             throw new IllegalArgumentException(String.format("flags %X is not between 0 and 0xffff", flags));
@@ -67,7 +65,14 @@ public class FileInfo {
         this.flags = flags;
         initialized = true;
     }
-
+    
+    public FileTime secondFileTime(FileTime lastModif)
+    {
+        long millis = lastModif.toMillis();
+        long diff = millis % 1000;
+        return FileTime.fromMillis(millis - diff);
+    }
+    
     /**
      * @param line structured as SHA256;0000;size;YYYY-MM-DDTHH:MM:SS;name
      * @throws IllegalArgumentException
@@ -131,14 +136,14 @@ public class FileInfo {
         name = finLigne.toString();
         initialized = true;
     }
-    
+
     public String getHash() {
         if (!initialized) {
             throw new IllegalStateException(Constantes.OBJECT_NOT_INITIALIZED);
         }
         return hash;
     }
-    
+
     @Override
     public String toString() {
         if (!initialized) {
@@ -146,22 +151,32 @@ public class FileInfo {
         }
         return String.format("%s;%04X;%d;%s;%s", hash, flags, Long.valueOf(size), lastModif.toString(), name);
     }
-    
+
     public String getName()
     {
         return name;
     }
-
+    
     public long getSize()
     {
         return size;
+    }
+
+    public static String getHumanReadableSize(long bytes) {
+        int unit = 1024;
+        if (bytes < unit) {
+            return bytes + " B";
+        }
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = "KMGTPE".charAt(exp - 1) + "i";
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
     
     public FileTime getLastModif()
     {
         return lastModif;
     }
-
+    
     /**
      * Compute the flags location
      * @param loc beginning of the entry
@@ -170,21 +185,21 @@ public class FileInfo {
     public long getFlagsLocation(Integer loc) {
         return loc + 2 * HASH_BYTES + 1;
     }
-
+    
     /**
      * Change flags to mark file as removed
      */
     public void setRemovedFlag() {
         flags |= FLAG_REMOVED;
     }
-
+    
     /**
      * @return true if the removed flag is set
      */
     public boolean isRemovedFlagSet() {
         return (flags & FLAG_REMOVED) != 0;
     }
-    
+
     /**
      * Return the current value of the flags
      * @return 4 hex digits
@@ -192,5 +207,5 @@ public class FileInfo {
     public String getFlagsString() {
         return String.format("%04X", flags);
     }
-    
+
 }

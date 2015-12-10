@@ -28,14 +28,19 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DirChecker {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(DirChecker.class);
-
+    
     /**
      * Index a directory : for each file, ask DirInfo object if file is known
      * @param path directory to index
@@ -47,7 +52,7 @@ public class DirChecker {
     {
         DirInfo index = new DirInfo(path);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            for (Path p : stream) { // ne peut pas utiliser stream.forEach à cause de l'IOException
+            for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isRegularFile(p)) {
                     index.addIfNeeded(p);
                 }
@@ -55,7 +60,7 @@ public class DirChecker {
         }
         LOG.info(String.format("Folder %s indexed", path));
     }
-    
+
     /**
      * Index a directory and all its subdirectories
      * @param path directory to index
@@ -67,11 +72,149 @@ public class DirChecker {
     {
         indexFolder(path);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            for (Path p : stream) { // ne peut pas utiliser stream.forEach à cause de l'IOException
-                if (Files.isDirectory(p)) {
+            for (Path p : stream) { // cannot use stream.forEach because of IOException
+                if (Files.isDirectory(p)
+                    && !isSpecialDir(p))
+                {
                     indexTree(p);
                 }
             }
         }
     }
+    
+    public void listDuplicates(Path path) throws IOException, InvalidIndexException
+    {
+        HashMap<String, ArrayList<Object>> everything = new HashMap<>();
+        LOG.info("counting folders");
+        int n = countFolders(path, 0);
+        LOG.info(String.format("%d folders found", n));
+        findEverything(path, everything, n, 0);
+        logDuplicates(everything);
+        // sortLogDuplicates(everything);
+    }
+    
+    public int countFolders(Path path, int current) throws IOException
+    {
+        int result = 1;
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+            for (Path p : stream) { // cannot use stream.forEach because of IOException
+                if (Files.isDirectory(p)
+                    && !isSpecialDir(p))
+                {
+                    int progress = current + result;
+                    if (progress % 10 == 0) {
+                        LOG.info(String.format("%d folders", progress));
+                    }
+                    result += countFolders(p, progress);
+                }
+            }
+        }
+        return result;
+    }
+
+    public int findEverything(Path path, HashMap<String, ArrayList<Object>> everything, int total, int current) throws IOException, InvalidIndexException
+    {
+        int result = 1;
+        DirInfo index = new DirInfo(path);
+        recordDir(path, index, everything, 1 << 20);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+            for (Path p : stream) { // cannot use stream.forEach because of IOException
+                if (Files.isDirectory(p)
+                    && !isSpecialDir(p))
+                {
+                    int progress = current + result;
+                    if (progress % 100 == 0) {
+                        LOG.info(String.format("progress %d/%d", progress, total));
+                    }
+                    result += findEverything(p, everything, total, progress);
+                }
+            }
+        }
+        return result;
+    }
+    
+    public boolean isSpecialDir(Path p)
+    {
+        String name = p.getFileName().toString();
+        if (name.equals("System Volume Information")) {
+            return true;
+        }
+        if (name.equals("$RECYCLE.BIN")) {
+            return true;
+        }
+        return false;
+    }
+
+    private void recordDir(Path path, DirInfo index, HashMap<String, ArrayList<Object>> everything, long threshold)
+    {
+        for (FileInfo current : index.getFiles()) {
+            if (current.getSize() < threshold) {
+                continue;
+            }
+            String fullPath = String.format("%s", path.resolve(current.getName()).normalize());
+            String hash = current.getHash();
+            ArrayList<Object> matches = everything.get(hash);
+            if (matches == null) {
+                ArrayList<Object> newList = new ArrayList<>();
+                newList.add(new Long(current.getSize()));
+                newList.add(fullPath);
+                everything.put(hash, newList);
+            } else {
+                matches.add(fullPath);
+            }
+        }
+    }
+    
+    /**
+     * logDuplicates : groups repeated files. Quite good but additional sorting
+     * by size would help.
+     * @param everything
+     */
+    private void logDuplicates(HashMap<String, ArrayList<Object>> everything)
+    {
+        Collection<ArrayList<Object>> duplicates = everything.values().stream()
+            .filter(l -> {
+                return l.size() > 2;
+            })
+            .sorted((l1, l2) -> {
+                Long a = (Long) l1.get(0);
+                Long b = (Long) l2.get(0);
+                return a.intValue() - b.intValue();
+            })
+            .collect(Collectors.toList());
+        for (ArrayList<Object> list : duplicates) {
+            LOG.info(String.format("[%s] %s has %d duplicates:",
+                FileInfo.getHumanReadableSize(((Long) list.get(0)).longValue()), list.get(1), list.size() - 2));
+            for (int i = 2; i < list.size(); i++) {
+                LOG.info(String.format("    %s", list.get(i)));
+            }
+        }
+    }
+
+    /**
+     * Sort by filename, not easy to see duplication
+     * @param everything
+     */
+    private void sortLogDuplicates(HashMap<String, ArrayList<String>> everything)
+    {
+        int unique = 0;
+        int extra = 0;
+        TreeSet<String> sortedSet = new TreeSet<>();
+        for (ArrayList<String> list : everything.values()) {
+            unique++;
+            if (list.size() > 1) {
+                extra--;
+                for (String s : list) {
+                    sortedSet.add(s);
+                    extra++;
+                }
+            }
+        }
+        for (String s : sortedSet) {
+            LOG.info(s);
+        }
+        
+        LOG.info(String.format("Unique %d, duplicates %d", unique, extra));
+    }
+
 }

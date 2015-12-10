@@ -30,21 +30,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Creates indexes in a directory tree
+ * Lists duplicate files
  */
-public class Indexer {
+public class DuplicateFinder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DuplicateFinder.class);
 
     public static void main(String[] args)
     {
         DirChecker checker = new DirChecker();
         try {
-            if (args[0].equals("-r")) {
-                checker.indexTree(Paths.get(args[1]));
-            } else {
-                checker.indexFolder(Paths.get(args[0]));
-            }
+            checker.listDuplicates(Paths.get(args[0]));
         } catch (Throwable t) {
             LOG.error("program aborted", t);
         }
