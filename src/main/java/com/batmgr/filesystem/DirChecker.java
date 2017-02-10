@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,8 @@ public class DirChecker {
     private static final Logger LOG = LoggerFactory.getLogger(DirChecker.class);
     
     /**
-     * Index a directory : for each file, ask DirInfo object if file is known
+     * Index a directory : for each file, ask DirInfo object to check
+     * registration
      * @param path directory to index
      * @throws IOException if a disk error occurs
      * @throws InvalidIndexException
@@ -58,7 +60,7 @@ public class DirChecker {
                 }
             }
         }
-        LOG.info(String.format("Folder %s indexed", path));
+        LOG.debug(String.format("Folder %s indexed", path));
     }
 
     /**
@@ -82,17 +84,33 @@ public class DirChecker {
         }
     }
     
-    public void listDuplicates(Path path) throws IOException, InvalidIndexException
+    /**
+     * Find and log duplicates
+     *
+     * @param path folder to analyse
+     * @param threshold : can be used to skip small files
+     * @throws IOException
+     * @throws InvalidIndexException
+     */
+    public void listDuplicates(Path path, long threshold) throws IOException, InvalidIndexException
     {
         HashMap<String, ArrayList<Object>> everything = new HashMap<>();
         LOG.info("counting folders");
         int n = countFolders(path, 0);
         LOG.info(String.format("%d folders found", n));
-        findEverything(path, everything, n, 0);
+        findEverything(path, everything, n, 0, threshold);
         logDuplicates(everything);
         // sortLogDuplicates(everything);
     }
     
+    /**
+     * Recursively count the folders in a location.
+     *
+     * @param path folder to search
+     * @param current used to track progress
+     * @return number of folders and sub-folders (at least 1)
+     * @throws IOException
+     */
     public int countFolders(Path path, int current) throws IOException
     {
         int result = 1;
@@ -112,11 +130,26 @@ public class DirChecker {
         return result;
     }
 
-    public int findEverything(Path path, HashMap<String, ArrayList<Object>> everything, int total, int current) throws IOException, InvalidIndexException
+    /**
+     * Record a whole hierarchy in a map, using their hash, e.g. to find duplicates.
+     * <p>
+     * Uses recursion.
+     *
+     * @param path : directory to search
+     * @param everything : map where files are recorded by their hashes
+     * @param total : number of directories in hierarchy
+     * @param current : number of directories processed (tracks progress)
+     * @param threshold : can be used to skip small files
+     * @return number of directories processed (tracks progress)
+     * @throws IOException
+     * @throws InvalidIndexException
+     */
+    public int findEverything(Path path, HashMap<String, ArrayList<Object>> everything, int total,
+        int current, long threshold) throws IOException, InvalidIndexException
     {
         int result = 1;
         DirInfo index = new DirInfo(path);
-        recordDir(path, index, everything, 1 << 20);
+        recordDir(path, index, everything, threshold);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)
@@ -126,7 +159,7 @@ public class DirChecker {
                     if (progress % 100 == 0) {
                         LOG.info(String.format("progress %d/%d", progress, total));
                     }
-                    result += findEverything(p, everything, total, progress);
+                    result += findEverything(p, everything, total, progress, threshold);
                 }
             }
         }
@@ -145,7 +178,15 @@ public class DirChecker {
         return false;
     }
 
-    private void recordDir(Path path, DirInfo index, HashMap<String, ArrayList<Object>> everything, long threshold)
+    /**
+     * Record a list of files in a map, using their hash, e.g. to find duplicates
+     * @param path : directory where the files are located
+     * @param index : list of files
+     * @param everything : map where files are recorded by their hashes
+     * @param threshold : can be used to skip small files
+     */
+    private void recordDir(Path path, DirInfo index, HashMap<String, ArrayList<Object>> everything,
+        long threshold)
     {
         for (FileInfo current : index.getFiles()) {
             if (current.getSize() < threshold) {
@@ -215,6 +256,34 @@ public class DirChecker {
         }
         
         LOG.info(String.format("Unique %d, duplicates %d", unique, extra));
+    }
+
+    /**
+     * Sweep directory : check that only files present in the directory are
+     * indexed. Doesn't check that the index is up to date.
+     * @param path directory to index
+     * @throws IOException if a disk error occurs
+     * @throws InvalidIndexException
+     * @throws NoSuchAlgorithmException
+     */
+    public void sweepFolder(Path path) throws IOException, InvalidIndexException, NoSuchAlgorithmException
+    {
+        DirInfo index = new DirInfo(path);
+        Map<String, FileInfo> nameIndex = index.getNameIndex();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+            for (Path p : stream) { // cannot use stream.forEach because of IOException
+                if (Files.isRegularFile(p)) {
+                    nameIndex.remove(p.getFileName().toString());
+                }
+            }
+        }
+        for (FileInfo fileInfo : nameIndex.values()) {
+            LOG.debug(String.format("File %s removed from index", fileInfo.getName()));
+            index.removeFromIndex(fileInfo);
+            // TODO ensure consistency if we try to remove something
+            // just before adding it !(?)
+        }
+        LOG.debug(String.format("Folder %s swept", path));
     }
 
 }

@@ -38,6 +38,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -243,8 +244,22 @@ public class DirInfo {
         return hashIndex.containsKey(hash);
     }
 
+    /**
+     * Return a Set with FileInfo
+     * @return a shallow copy of the index, sharing the same FileInfo objects
+     */
     public Set<FileInfo> getFiles()
     {
-        return locations.keySet();
+        return new HashSet<FileInfo>(locations.keySet());
     }
+    
+    /**
+     * Return a Map with file names as keys and FileInfo as values.
+     * <p>
+     * @return a shallow copy of the index, sharing the same FileInfo objects
+     */
+    public Map<String, FileInfo> getNameIndex() {
+        return new HashMap<String, FileInfo>(nameIndex);
+    }
+
 }

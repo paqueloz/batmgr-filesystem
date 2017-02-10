@@ -24,6 +24,7 @@
 package com.batmgr.filesystem;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -84,6 +85,24 @@ public class DirCheckerTest {
         dirChecker.indexTree(testPath);
         assertEquals(166, Files.size(testPath.resolve(DirInfo.IDXFILE)));
         assertEquals(166, Files.size(testPathDeep.resolve(DirInfo.IDXFILE)));
+    }
+    
+    @Test
+    public void test_sweepFolder() throws IOException, InterruptedException, InvalidIndexException, NoSuchAlgorithmException
+    {
+        String sampleFile = "smpl.txt";
+        Path testPath = testRoot.resolve("tst1");
+        cleanupDir(testPath);
+        Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
+        DirChecker dirChecker = new DirChecker();
+        dirChecker.indexFolder(testPath);
+        DirInfo dirInfo = new DirInfo(testPath);
+        assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
+        Files.delete(testPath.resolve(sampleFile));
+        Thread.sleep(2000);
+        dirChecker.sweepFolder(testPath);
+        dirInfo = new DirInfo(testPath);
+        assertFalse(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
     }
     
 }
