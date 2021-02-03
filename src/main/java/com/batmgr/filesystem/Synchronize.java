@@ -25,15 +25,15 @@ package com.batmgr.filesystem;
 
 import java.awt.Toolkit;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.nio.file.FileVisitResult.CONTINUE;
 
 /**
  * Synchronize a source directory to a target directory
@@ -45,7 +45,9 @@ public class Synchronize {
     
     public static void main(String[] args) {
         try {
-            synchronize(Paths.get(args[0]), Paths.get(args[1]));
+            boolean scrape = args.length > 2 && args[2].equals("scrape");
+            LOG.info("scrape : " + scrape);
+            synchronize(Paths.get(args[0]), Paths.get(args[1]), scrape);
         } catch (Throwable t) {
             LOG.error("program aborted", t);
         }
@@ -61,7 +63,7 @@ public class Synchronize {
      * <br>
      * This method is not optimal: identical files can be copied several times.
      */
-    public static void synchronize(Path src, Path dst) throws NoSuchAlgorithmException, IOException, InvalidIndexException
+    public static void synchronize(Path src, Path dst, boolean scrape) throws NoSuchAlgorithmException, IOException, InvalidIndexException
     {
         LOG.info(String.format("Synchronize %s", src.toString()));
         DirChecker checker = new DirChecker();
@@ -81,7 +83,7 @@ public class Synchronize {
                     if (checker.isSpecialDir(p)) {
                         continue;
                     }
-                    synchronize(p, dst.resolve(p.getFileName().toString()));
+                    synchronize(p, dst.resolve(p.getFileName().toString()), scrape);
                 } else {
                     if (!Files.isRegularFile(p)) {
                         continue;
@@ -114,6 +116,64 @@ public class Synchronize {
                     }
                     if (!dstFileInfo.getHash().equals(srcFileInfo.getHash())) {
                         LOG.warn(String.format("%s has different content", dstPath));
+                    }
+                }
+            }
+        }
+        if (scrape) { // scrub ?? // timing issues ??
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dst)) {
+                for (Path p : stream) { // cannot use stream.forEach because of IOException
+                    if (Files.isDirectory(p)) {
+                        if (checker.isSpecialDir(p)) {
+                            continue;
+                        }
+                        if (!Files.exists(src.resolve(p.getFileName().toString()))) {
+                            LOG.info(String.format("directory %s present only in dest, trying to delete",
+                                p.getFileName()));
+                            try {
+                                Files.walkFileTree(p, new FileVisitor<Path>() {
+                                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                                        throws IOException {
+                                        return CONTINUE;
+                                    }
+                                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                                        throws IOException {
+                                        LOG.info(String.format("deleting file %s", file));
+                                        Files.delete(file);
+                                        return CONTINUE;
+                                    }
+                                    public FileVisitResult visitFileFailed(Path file, IOException exc)
+                                        throws IOException {
+                                        throw exc;
+                                    }
+                                    public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                                        throws IOException {
+                                        if (exc != null) {
+                                            throw exc;
+                                        }
+                                        LOG.info(String.format("deleting directory %s", dir));
+                                        Files.delete(dir);
+                                        return CONTINUE;
+                                    }
+                                });
+                            } catch (Exception e) {
+                                LOG.warn(String.format("cannot delete %s", p), e);
+                            }
+                        }
+                    } else {
+                        if (!Files.isRegularFile(p)) {
+                            continue;
+                        }
+                        String name = p.getFileName().toString();
+                        FileInfo dstFileInfo = dstNames.get(name);
+                        if (dstFileInfo == null) { // file not indexed (special file, index file...)
+                            continue;
+                        }
+                        FileInfo srcFileInfo = srcNames.get(name);
+                        if (srcFileInfo == null) { // not present in src
+                            LOG.info(String.format("deleting file %s", p));
+                            Files.delete(p);
+                        }
                     }
                 }
             }
