@@ -57,7 +57,7 @@ public class DirInfoTest {
     private void cleanupDir(Path p) throws IOException, InterruptedException
     {
         if (Files.exists(p)) {
-            FileUtils.deleteDirectory(p.toFile());
+            FileUtils.deleteDirectory(p.toFile()); // TODO not the right way to cleanup
         }
         Thread.sleep(1000);
         Files.createDirectory(p);
@@ -122,6 +122,7 @@ public class DirInfoTest {
         dirInfo.addIfNeeded(testPath.resolve(sampleFile));
         assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
         assertEquals(476, Files.size(testPath.resolve(DirInfo.IDXFILE)));
+        try { Thread.sleep(2000); } catch (InterruptedException e) {}
         // now modify sampleFile
         try (FileChannel fc = FileChannel.open(testPath.resolve(sampleFile), StandardOpenOption.WRITE)) {
             ByteBuffer byteBuffer = ByteBuffer.wrap("**********".getBytes(DirInfo.IDXCHARSET));

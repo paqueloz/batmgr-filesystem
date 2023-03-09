@@ -164,6 +164,11 @@ public class DirInfo {
         FileTime lastModif = Files.getLastModifiedTime(p);
         // search by filename
         FileInfo fileInfo = nameIndex.get(name);
+        // the next statement makes the index system efficient
+        // BUT also risky because lastModif could be inaccurate,
+        // or writes could happen in the file during the second
+        // elapsed after the fileTime was stored in the index,
+        // or the index could be hacked
         if (fileInfo != null
             && fileInfo.getSize() == size
             && fileInfo.getLastModif().compareTo(fileInfo.secondFileTime(lastModif)) == 0)

@@ -57,9 +57,11 @@ public class Synchronize {
     /**
      * Recursively copy the contents of src to dst.
      * <p>
-     * This method is safe: it checks the contents of copied files and issues a warning if there is a difference.
+     * This method is safe: it checks the contents of copied files and aborts if there is a difference.
      * <br>
      * This method is efficient: existing files are not copied.
+     * <br>
+     * This method is also unsafe: the index could be hacked and some file modifications may be undetected.
      * <br>
      * This method is not optimal: identical files can be copied several times.
      */
@@ -111,11 +113,10 @@ public class Synchronize {
                     dstNames = dstInfo.getNameIndex();
                     dstFileInfo = dstNames.get(name);
                     if (dstFileInfo == null) {
-                        LOG.warn(String.format("%s not present in destination", dstPath));
-                        continue;
+                        throw new RuntimeException(String.format("%s not present in destination", dstPath));
                     }
                     if (!dstFileInfo.getHash().equals(srcFileInfo.getHash())) {
-                        LOG.warn(String.format("%s has different content", dstPath));
+                        throw new RuntimeException(String.format("%s has different content", dstPath));
                     }
                 }
             }
