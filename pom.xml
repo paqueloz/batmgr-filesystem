@@ -79,6 +79,8 @@
                             <arguments>
                                 <argument>d:\data</argument>
                                 <argument>f:\data</argument>
+                                <argument>scrape</argument>
+                                <!-- idée : utiliser index pour détecter dégradation des fichiers-->
                             </arguments>
                         </configuration>
                     </execution>
