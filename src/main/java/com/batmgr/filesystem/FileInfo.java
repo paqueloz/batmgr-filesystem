@@ -27,7 +27,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 
 /**
  * Manage the details of a file. <br>

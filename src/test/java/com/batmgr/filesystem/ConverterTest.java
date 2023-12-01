@@ -25,7 +25,7 @@ package com.batmgr.filesystem;
 
 import static org.junit.Assert.assertEquals;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 
 import org.junit.Test;
 
