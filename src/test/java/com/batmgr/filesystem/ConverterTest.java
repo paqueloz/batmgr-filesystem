@@ -23,16 +23,15 @@
  */
 package com.batmgr.filesystem;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 import jakarta.xml.bind.DatatypeConverter;
-
-import org.junit.Test;
 
 public class ConverterTest {
     
     @Test
     public void test() {
-        assertEquals(DatatypeConverter.printHexBinary(new byte[] { 0x00, 0x10, 0x20, 0x30 }), "00102030");
+        assertThat(DatatypeConverter.printHexBinary(new byte[] { 0x00, 0x10, 0x20, 0x30 })).isEqualTo("00102030");
     }
 }

@@ -197,7 +197,7 @@ public class DirChecker {
             ArrayList<Object> matches = everything.get(hash);
             if (matches == null) {
                 ArrayList<Object> newList = new ArrayList<>();
-                newList.add(new Long(current.getSize()));
+                newList.add(current.getSize());
                 newList.add(fullPath);
                 everything.put(hash, newList);
             } else {

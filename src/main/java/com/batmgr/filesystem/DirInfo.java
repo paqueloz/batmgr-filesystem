@@ -42,15 +42,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Manage the indexation of one directory
  */
 public class DirInfo {
-    
-    private static final Logger    LOG          = LoggerFactory.getLogger(DirInfo.class);
 
     public static final String     IDXFILE      = ".index";
     public static final String     IDXCHARSET   = "UTF-8";
@@ -140,7 +136,7 @@ public class DirInfo {
         // several files can have the same hash
         nameIndex.put(fi.getName(), fi);
         hashIndex.put(fi.getHash(), fi); // TODO use list
-        locations.put(fi, new Integer(start));
+        locations.put(fi, start);
     }
     
     /**
@@ -199,7 +195,7 @@ public class DirInfo {
         // update indexes if write is successful
         nameIndex.put(fileInfo.getName(), fileInfo);
         hashIndex.put(fileInfo.getHash(), fileInfo);
-        locations.put(fileInfo, new Integer(location));
+        locations.put(fileInfo, location);
     }
 
     /**

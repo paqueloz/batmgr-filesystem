@@ -23,10 +23,6 @@
  */
 package com.batmgr.filesystem;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,8 +35,11 @@ import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DirInfoTest {
 
@@ -48,7 +47,7 @@ public class DirInfoTest {
 
     private Path testRoot;
 
-    @Before
+    @BeforeEach
     public void setUp() throws URISyntaxException {
         resource = getClass().getResource("/sample.txt");
         testRoot = Paths.get(resource.toURI()).resolve("..").normalize();
@@ -67,15 +66,17 @@ public class DirInfoTest {
     public void testEmptyDir() throws IOException, InvalidIndexException, InterruptedException {
         Path testPath = testRoot.resolve("tst1");
         cleanupDir(testPath);
-        DirInfo dirInfo = new DirInfo(testPath);
+        new DirInfo(testPath);
     }
 
-    @Test(expected = InvalidIndexException.class)
+    @Test
     public void testEmptyIndex() throws IOException, InterruptedException, InvalidIndexException {
-        Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
-        Files.copy(testRoot.resolve("empty.txt"), testPath.resolve(DirInfo.IDXFILE));
-        DirInfo dirInfo = new DirInfo(testPath);
+        assertThatThrownBy(() -> {
+            Path testPath = testRoot.resolve("tst1");
+            cleanupDir(testPath);
+            Files.copy(testRoot.resolve("empty.txt"), testPath.resolve(DirInfo.IDXFILE));
+            new DirInfo(testPath);
+        }).isInstanceOf(InvalidIndexException.class);
     }
 
     @Test
@@ -84,31 +85,35 @@ public class DirInfoTest {
         cleanupDir(testPath);
         Files.copy(testRoot.resolve("index-good.txt"), testPath.resolve(DirInfo.IDXFILE));
         DirInfo dirInfo = new DirInfo(testPath);
-        assertEquals(57, dirInfo.getLocation("abcd"));
-        assertEquals(0x10b, dirInfo.getLocation("efgh")); // location found with hex editor
-        assertEquals(-1, dirInfo.getLocation("not present"));
+        assertThat(dirInfo.getLocation("abcd")).isEqualTo(57);
+        assertThat(dirInfo.getLocation("efgh")).isEqualTo(0x10b); // location found with hex editor
+        assertThat(dirInfo.getLocation("not present")).isEqualTo(-1);
     }
     
     @Test
     public void testGoodIndexLength() throws IOException {
-        assertEquals(8, "στην".getBytes(DirInfo.IDXCHARSET).length); // 4 greek characters = 8 bytes
-        assertEquals(370, Files.size(testRoot.resolve("index-good.txt")));
+        assertThat("στην".getBytes(DirInfo.IDXCHARSET).length).isEqualTo(8); // 4 greek characters = 8 bytes
+        assertThat(Files.size(testRoot.resolve("index-good.txt"))).isEqualTo(370);
     }
 
-    @Test(expected = InvalidIndexException.class)
+    @Test
     public void testBadIndex() throws IOException, InterruptedException, InvalidIndexException {
-        Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
-        Files.copy(testRoot.resolve("index-bad-signature.txt"), testPath.resolve(DirInfo.IDXFILE));
-        DirInfo dirInfo = new DirInfo(testPath);
+        assertThatThrownBy(() -> {
+            Path testPath = testRoot.resolve("tst1");
+            cleanupDir(testPath);
+            Files.copy(testRoot.resolve("index-bad-signature.txt"), testPath.resolve(DirInfo.IDXFILE));
+            new DirInfo(testPath);
+        }).isInstanceOf(InvalidIndexException.class);
     }
 
-    @Test(expected = InvalidIndexException.class)
+    @Test
     public void testBadContent() throws IOException, InterruptedException, InvalidIndexException {
-        Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
-        Files.copy(testRoot.resolve("index-bad-content.txt"), testPath.resolve(DirInfo.IDXFILE));
-        DirInfo dirInfo = new DirInfo(testPath);
+        assertThatThrownBy(() -> {
+            Path testPath = testRoot.resolve("tst1");
+            cleanupDir(testPath);
+            Files.copy(testRoot.resolve("index-bad-content.txt"), testPath.resolve(DirInfo.IDXFILE));
+            new DirInfo(testPath);
+        }).isInstanceOf(InvalidIndexException.class);
     }
 
     @Test
@@ -120,8 +125,8 @@ public class DirInfoTest {
         DirInfo dirInfo = new DirInfo(testPath);
         Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
         dirInfo.addIfNeeded(testPath.resolve(sampleFile));
-        assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
-        assertEquals(476, Files.size(testPath.resolve(DirInfo.IDXFILE)));
+        assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isTrue();
+        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(476);
         try { Thread.sleep(2000); } catch (InterruptedException e) {}
         // now modify sampleFile
         try (FileChannel fc = FileChannel.open(testPath.resolve(sampleFile), StandardOpenOption.WRITE)) {
@@ -130,13 +135,13 @@ public class DirInfoTest {
         }
         // add to index again
         dirInfo.addIfNeeded(testPath.resolve(sampleFile));
-        assertFalse(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
-        assertEquals(582, Files.size(testPath.resolve(DirInfo.IDXFILE)));
+        assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isFalse();
+        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(582);
         try (FileChannel fc = FileChannel.open(testPath.resolve(DirInfo.IDXFILE), StandardOpenOption.READ)) {
             fc.position(new FileInfo().getFlagsLocation(370));
             ByteBuffer buf = ByteBuffer.allocate(4); // 4 chars
-            assertEquals(4, fc.read(buf));
-            assertEquals('1', buf.array()[3]);
+            assertThat(fc.read(buf)).isEqualTo(4);
+            assertThat(buf.array()[3]).isEqualTo((byte)'1');
         }
     }
 

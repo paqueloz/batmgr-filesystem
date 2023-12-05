@@ -23,9 +23,7 @@
  */
 package com.batmgr.filesystem;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URL;
@@ -35,19 +33,23 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DirCheckerTest {
     
     private URL  resource;
 
     private Path testRoot;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         resource = getClass().getResource("/sample.txt");
         testRoot = Paths.get(resource.toURI()).resolve("..").normalize();
+        log.debug("testRoot initialized: {}", testRoot);
     }
     
     private void cleanupDir(Path p) throws IOException, InterruptedException
@@ -68,8 +70,8 @@ public class DirCheckerTest {
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexFolder(testPath);
         DirInfo dirInfo = new DirInfo(testPath);
-        assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
-        assertEquals(163, Files.size(testPath.resolve(DirInfo.IDXFILE)));
+        assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isTrue();
+        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(163);
     }
 
     @Test
@@ -83,8 +85,8 @@ public class DirCheckerTest {
         Files.copy(testRoot.resolve("sample.txt"), testPathDeep.resolve("sample2.txt"));
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexTree(testPath);
-        assertEquals(166, Files.size(testPath.resolve(DirInfo.IDXFILE)));
-        assertEquals(166, Files.size(testPathDeep.resolve(DirInfo.IDXFILE)));
+        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(166);
+        assertThat(Files.size(testPathDeep.resolve(DirInfo.IDXFILE))).isEqualTo(166);
     }
     
     @Test
@@ -97,12 +99,12 @@ public class DirCheckerTest {
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexFolder(testPath);
         DirInfo dirInfo = new DirInfo(testPath);
-        assertTrue(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
+        assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isTrue();
         Files.delete(testPath.resolve(sampleFile));
         Thread.sleep(2000);
         dirChecker.sweepFolder(testPath);
         dirInfo = new DirInfo(testPath);
-        assertFalse(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA"));
+        assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isFalse();
     }
     
 }
