@@ -23,8 +23,15 @@
  */
 package com.batmgr.filesystem;
 
+import java.util.Set;
+
 public class Constantes {
     
     public static final String OBJECT_NOT_INITIALIZED = "Object is not fully initialized";
+
+    public static Set<String> SPECIAL_DIRS = Set.of(
+        "System Volume Information",
+        "$RECYCLE.BIN"
+    );
 
 }

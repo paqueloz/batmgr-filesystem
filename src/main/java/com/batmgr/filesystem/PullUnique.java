@@ -108,7 +108,7 @@ public class PullUnique {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(src)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)) {
-                    if (checker.isSpecialDir(p)) {
+                    if (Constantes.SPECIAL_DIRS.contains(p.getFileName().toString())) {
                         continue;
                     }
                     dirsQueue.add(p);

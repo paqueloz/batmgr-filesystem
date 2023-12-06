@@ -82,7 +82,7 @@ public class Synchronize {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(src)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)) {
-                    if (checker.isSpecialDir(p)) {
+                    if (Constantes.SPECIAL_DIRS.contains(p.getFileName().toString())) {
                         continue;
                     }
                     synchronize(p, dst.resolve(p.getFileName().toString()), scrape);
@@ -125,7 +125,7 @@ public class Synchronize {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(dst)) {
                 for (Path p : stream) { // cannot use stream.forEach because of IOException
                     if (Files.isDirectory(p)) {
-                        if (checker.isSpecialDir(p)) {
+                        if (Constantes.SPECIAL_DIRS.contains(p.getFileName().toString())) {
                             continue;
                         }
                         if (!Files.exists(src.resolve(p.getFileName().toString()))) {

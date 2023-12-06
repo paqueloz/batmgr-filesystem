@@ -35,12 +35,10 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DirChecker {
-    
-    private static final Logger LOG = LoggerFactory.getLogger(DirChecker.class);
     
     /**
      * Index a directory : for each file, ask DirInfo object to check
@@ -60,7 +58,7 @@ public class DirChecker {
                 }
             }
         }
-        LOG.debug(String.format("Folder %s indexed", path));
+        log.debug(String.format("Folder %s indexed", path));
     }
 
     /**
@@ -76,7 +74,7 @@ public class DirChecker {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)
-                    && !isSpecialDir(p))
+                    && !Constantes.SPECIAL_DIRS.contains(p.getFileName().toString()))
                 {
                     indexTree(p);
                 }
@@ -95,9 +93,9 @@ public class DirChecker {
     public void listDuplicates(Path path, long threshold) throws IOException, InvalidIndexException
     {
         HashMap<String, ArrayList<Object>> everything = new HashMap<>();
-        LOG.info("counting folders");
+        log.info("counting folders");
         int n = countFolders(path, 0);
-        LOG.info(String.format("%d folders found", n));
+        log.info(String.format("%d folders found", n));
         findEverything(path, everything, n, 0, threshold);
         logDuplicates(everything);
         // sortLogDuplicates(everything);
@@ -117,11 +115,11 @@ public class DirChecker {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)
-                    && !isSpecialDir(p))
+                    && !Constantes.SPECIAL_DIRS.contains(p.getFileName().toString()))
                 {
                     int progress = current + result;
                     if (progress % 10 == 0) {
-                        LOG.info(String.format("%d folders", progress));
+                        log.info(String.format("%d folders", progress));
                     }
                     result += countFolders(p, progress);
                 }
@@ -153,11 +151,11 @@ public class DirChecker {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)
-                    && !isSpecialDir(p))
+                    && !Constantes.SPECIAL_DIRS.contains(p.getFileName().toString()))
                 {
                     int progress = current + result;
                     if (progress % 100 == 0) {
-                        LOG.info(String.format("progress %d/%d", progress, total));
+                        log.info(String.format("progress %d/%d", progress, total));
                     }
                     result += findEverything(p, everything, total, progress, threshold);
                 }
@@ -166,18 +164,6 @@ public class DirChecker {
         return result;
     }
     
-    public boolean isSpecialDir(Path p)
-    {
-        String name = p.getFileName().toString();
-        if (name.equals("System Volume Information")) {
-            return true;
-        }
-        if (name.equals("$RECYCLE.BIN")) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * Record a list of files in a map, using their hash, e.g. to find duplicates
      * @param path : directory where the files are located
@@ -224,10 +210,10 @@ public class DirChecker {
             })
             .collect(Collectors.toList());
         for (ArrayList<Object> list : duplicates) {
-            LOG.info(String.format("[%s] %s has %d duplicates:",
+            log.info(String.format("[%s] %s has %d duplicates:",
                 FileInfo.getHumanReadableSize(((Long) list.get(0)).longValue()), list.get(1), list.size() - 2));
             for (int i = 2; i < list.size(); i++) {
-                LOG.info(String.format("    %s", list.get(i)));
+                log.info(String.format("    %s", list.get(i)));
             }
         }
     }
@@ -252,10 +238,10 @@ public class DirChecker {
             }
         }
         for (String s : sortedSet) {
-            LOG.info(s);
+            log.info(s);
         }
         
-        LOG.info(String.format("Unique %d, duplicates %d", unique, extra));
+        log.info(String.format("Unique %d, duplicates %d", unique, extra));
     }
 
     /**
@@ -278,12 +264,12 @@ public class DirChecker {
             }
         }
         for (FileInfo fileInfo : nameIndex.values()) {
-            LOG.debug(String.format("File %s removed from index", fileInfo.getName()));
+            log.debug(String.format("File %s removed from index", fileInfo.getName()));
             index.removeFromIndex(fileInfo);
             // TODO ensure consistency if we try to remove something
             // just before adding it !(?)
         }
-        LOG.debug(String.format("Folder %s swept", path));
+        log.debug(String.format("Folder %s swept", path));
     }
 
 }

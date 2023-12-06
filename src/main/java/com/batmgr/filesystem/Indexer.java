@@ -24,30 +24,58 @@
 package com.batmgr.filesystem;
 
 import java.awt.Toolkit;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 /**
  * Creates indexes in a directory tree
  */
-public class Indexer {
+@Command
+@Slf4j
+public class Indexer implements Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
+    @Option(names = { "-r", "--recurse"}, description = "Recurse")
+    boolean recurse = false;
+
+    @Option(names = { "-c", "--cleanup"}, description = "Cleanup, remove .index")
+    boolean cleanup = false;
+
+    @Parameters(paramLabel = "<path>", description = "Path to index")
+    Path path;
+
+    @Override
+    public void run() {
+        try {
+            if (!cleanup) {
+                DirChecker checker = new DirChecker();
+                if (recurse) {
+                    checker.indexTree(path);
+                } else {
+                    checker.indexFolder(path);
+                }
+            } else {
+                DirCleaner cleaner = new DirCleaner();
+                if (recurse) {
+                    cleaner.cleanTree(path);
+                } else {
+                    cleaner.cleanFolder(path);
+                }
+            }
+        } catch (Throwable t) {
+            log.error("program aborted", t);
+        } finally {
+            Toolkit.getDefaultToolkit().beep();
+        }
+    }
 
     public static void main(String[] args)
     {
-        DirChecker checker = new DirChecker();
-        try {
-            if (args[0].equals("-r")) {
-                checker.indexTree(Paths.get(args[1]));
-            } else {
-                checker.indexFolder(Paths.get(args[0]));
-            }
-        } catch (Throwable t) {
-            LOG.error("program aborted", t);
-        }
-        Toolkit.getDefaultToolkit().beep();
+        System.exit(new CommandLine(new Indexer()).execute(args));
     }
+
 }

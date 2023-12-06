@@ -50,7 +50,7 @@ public class DirInfo {
 
     public static final String     IDXFILE      = ".index";
     public static final String     IDXCHARSET   = "UTF-8";
-    private static final String    IDXSIGNATURE = "DIRECTORY INDEX - NO REAL DATA IN THIS FILE - VERSION 1";
+    public static final String     IDXSIGNATURE = "DIRECTORY INDEX - NO REAL DATA IN THIS FILE - VERSION 1";
 
     private Map<String, FileInfo>  nameIndex;                                                               // key is file name (unique)
     private Map<String, FileInfo>  hashIndex;                                                               // key is content hash (not unique)
