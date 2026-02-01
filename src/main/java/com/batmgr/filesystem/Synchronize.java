@@ -65,7 +65,8 @@ public class Synchronize {
      * <br>
      * This method is not optimal: identical files can be copied several times.
      */
-    public static void synchronize(Path src, Path dst, boolean scrape) throws NoSuchAlgorithmException, IOException, InvalidIndexException
+    public static void synchronize(Path src, Path dst, boolean scrape) throws NoSuchAlgorithmException,
+        IOException, InvalidIndexException, NotIndexableException
     {
         LOG.info(String.format("Synchronize %s", src.toString()));
         DirChecker checker = new DirChecker();

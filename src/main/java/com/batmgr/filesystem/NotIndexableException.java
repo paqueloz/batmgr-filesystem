@@ -23,24 +23,26 @@
  */
 package com.batmgr.filesystem;
 
-public class InvalidIndexException extends Exception {
+public class NotIndexableException extends Exception {
 
-    public InvalidIndexException() {
+    public NotIndexableException() {
     }
 
-    public InvalidIndexException(String message) {
+    public NotIndexableException(String message) {
         super(message);
     }
 
-    public InvalidIndexException(Throwable cause) {
+    public NotIndexableException(Throwable cause) {
         super(cause);
     }
 
-    public InvalidIndexException(String message, Throwable cause) {
+    public NotIndexableException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public InvalidIndexException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public NotIndexableException(String message, Throwable cause,
+        boolean enableSuppression, boolean writableStackTrace) {
+
         super(message, cause, enableSuppression, writableStackTrace);
     }
 

@@ -24,39 +24,34 @@
 package com.batmgr.filesystem;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import jakarta.xml.bind.DatatypeConverter;
-
-/**
- * Knows how to read a file's signature.
- */
-public class FileChecker {
+public class DirUtil {
 
     /**
-     * Compute SHA-256 file signature
-     * @param path the file path
-     * @return the signature in hexadecimal (uppercase)
-     * @throws IOException if there is a problem reading the file
-     * @throws NoSuchAlgorithmException if it is not possible to compute SHA-256
+     * Prepare a clean directory: if it doesn't exist, create it, if it exists, delete all its contents.
      */
-    public String computeSha256(Path path) throws IOException, NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        try (SeekableByteChannel sbc = Files.newByteChannel(path)) {
-            ByteBuffer buf = ByteBuffer.allocate(0x200000); // 2 MB
-            while (sbc.read(buf) > 0) {
-                buf.flip();
-                md.update(buf);
-                buf.clear();
-            }
+    public static void cleanupDir(Path p) throws IOException
+    {
+        if (!Files.exists(p)) {
+            Files.createDirectories(p);
+            return;
         }
-        byte[] digest = md.digest();
-        return DatatypeConverter.printHexBinary(digest);
+        try (Stream<Path> stream = Files.walk(p)) {
+            stream.sorted(Comparator.reverseOrder()) // stream has directories before their children
+                .filter(Predicate.not(p::equals))    // stream has p but we want to keep it
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to delete: " + path, e);
+                    }
+                });
+        }
     }
 
 }

@@ -78,9 +78,10 @@
                             <!-- copie récursive de arg0 dans arg1 -->
                             <mainClass>com.batmgr.filesystem.Synchronize</mainClass>
                             <arguments>
-                                <argument>d:\data</argument>
-                                <argument>f:\data</argument>
-                                <argument>scrape</argument>
+                                <argument>d:\download</argument>
+                                <argument>e:\download</argument>
+                                <!-- scrape = supprime les fichiers absents de la source -->
+<!--                                <argument>scrape</argument>-->
                                 <!-- idée : utiliser index pour détecter dégradation des fichiers-->
                             </arguments>
                         </configuration>
@@ -108,7 +109,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.14</version>
+            <version>1.5.13</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -129,13 +130,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.15.1</version>
+            <version>3.27.7</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

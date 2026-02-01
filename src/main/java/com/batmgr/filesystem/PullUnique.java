@@ -65,11 +65,9 @@ public class PullUnique {
      * 
      * @param src the source directory
      * @param dst the target directory
-     * @throws NoSuchAlgorithmException
-     * @throws IOException
-     * @throws InvalidIndexException
      */
-    public static void pullUnique(Path src, Path dst) throws NoSuchAlgorithmException, IOException, InvalidIndexException
+    public static void pullUnique(Path src, Path dst) throws NoSuchAlgorithmException, IOException,
+        InvalidIndexException, NotIndexableException
     {
         LOG.info("pullUnique {}", src.toString());
         LinkedList<Path> dirsQueue = new LinkedList<Path>(); // FIFO
@@ -88,16 +86,9 @@ public class PullUnique {
     /**
      * Scan src, add all directories to dirsToProcess, copy all files to dst
      * only once, based on content
-     * @param src
-     * @param dst
-     * @param dstInfo
-     * @param dirsQueue
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidIndexException
      */
-    public static void pullOneDir(Path src, Path dst, DirInfo dstInfo, LinkedList<Path> dirsQueue) throws IOException, NoSuchAlgorithmException,
-        InvalidIndexException
+    public static void pullOneDir(Path src, Path dst, DirInfo dstInfo, LinkedList<Path> dirsQueue) throws IOException,
+        NoSuchAlgorithmException, InvalidIndexException, NotIndexableException
     {
         LOG.info("pullOneDir {}", src.toString());
         DirChecker checker = new DirChecker();

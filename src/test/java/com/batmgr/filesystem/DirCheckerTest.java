@@ -23,24 +23,20 @@
  */
 package com.batmgr.filesystem;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import lombok.extern.slf4j.Slf4j;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class DirCheckerTest {
-    
+
     private URL  resource;
 
     private Path testRoot;
@@ -51,50 +47,41 @@ public class DirCheckerTest {
         testRoot = Paths.get(resource.toURI()).resolve("..").normalize();
         log.debug("testRoot initialized: {}", testRoot);
     }
-    
-    private void cleanupDir(Path p) throws IOException, InterruptedException
-    {
-        if (Files.exists(p)) {
-            FileUtils.deleteDirectory(p.toFile());
-        }
-        Thread.sleep(1000);
-        Files.createDirectory(p);
-    }
-    
+
     @Test
-    public void test_indexFolder() throws IOException, InterruptedException, InvalidIndexException, NoSuchAlgorithmException {
+    public void test_indexFolder() throws Exception {
         String sampleFile = "smpl.txt";
         Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
+        DirUtil.cleanupDir(testPath);
         Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexFolder(testPath);
         DirInfo dirInfo = new DirInfo(testPath);
         assertThat(dirInfo.isHashPresent("4F13A4F6083341F66D39024D7B3765387EE1A3437414CECCC774238A62C65BBA")).isTrue();
-        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(163);
+        assertThat(Files.size(testPath.resolve(Shared.INDEX_NAME))).isEqualTo(163);
     }
 
     @Test
-    public void test_indexTree() throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidIndexException
+    public void test_indexTree() throws Exception
     {
         Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
+        DirUtil.cleanupDir(testPath);
         Files.copy(testRoot.resolve("sample.txt"), testPath.resolve("sample1.txt"));
         Path testPathDeep = testRoot.resolve("tst1/tst2");
         Files.createDirectory(testPathDeep);
         Files.copy(testRoot.resolve("sample.txt"), testPathDeep.resolve("sample2.txt"));
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexTree(testPath);
-        assertThat(Files.size(testPath.resolve(DirInfo.IDXFILE))).isEqualTo(166);
-        assertThat(Files.size(testPathDeep.resolve(DirInfo.IDXFILE))).isEqualTo(166);
+        assertThat(Files.size(testPath.resolve(Shared.INDEX_NAME))).isEqualTo(166);
+        assertThat(Files.size(testPathDeep.resolve(Shared.INDEX_NAME))).isEqualTo(166);
     }
     
     @Test
-    public void test_sweepFolder() throws IOException, InterruptedException, InvalidIndexException, NoSuchAlgorithmException
+    public void test_sweepFolder() throws Exception
     {
         String sampleFile = "smpl.txt";
         Path testPath = testRoot.resolve("tst1");
-        cleanupDir(testPath);
+        DirUtil.cleanupDir(testPath);
         Files.copy(testRoot.resolve("sample.txt"), testPath.resolve(sampleFile));
         DirChecker dirChecker = new DirChecker();
         dirChecker.indexFolder(testPath);

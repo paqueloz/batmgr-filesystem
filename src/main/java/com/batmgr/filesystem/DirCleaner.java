@@ -23,46 +23,40 @@
  */
 package com.batmgr.filesystem;
 
-import java.io.BufferedReader;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Remove .index files
+ * Remove index files
  */
+@Slf4j
 public class DirCleaner {
 
-    public void cleanFolder(Path testDir) throws IOException {
-        // could be encapsulated in DirInfo but constructor reindexes...
-        Path idx = testDir.resolve(DirInfo.IDXFILE);
-        if (!Files.exists(idx)) {
-            return;
-        }
-        if (!Files.isRegularFile(idx)) {
-            return;
-        }
-        try (InputStream in = Files.newInputStream(idx);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in, DirInfo.IDXCHARSET))) {
+    /**
+     * Remove index file in one directory (non recursively)
+     */
+    public void cleanFolder(Path directory) throws IOException, InvalidIndexException,
+        NotIndexableException {
 
-            String line = reader.readLine();
-            if (!line.equals(DirInfo.IDXSIGNATURE)) {
-                return;
-            }
-        }
-        Files.delete(idx);
+        new DirInfo(directory).deleteIndexFile();
     }
 
-    public void cleanTree(Path path) throws IOException {
-        cleanFolder(path);
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+    /**
+     * Recursively remove index files in a directory tree
+     */
+    public void cleanTree(Path rootDirectory) throws IOException, InvalidIndexException,
+        NotIndexableException {
+
+        cleanFolder(rootDirectory);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(rootDirectory)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
                 if (Files.isDirectory(p)
-                    && !Constantes.SPECIAL_DIRS.contains(p.getFileName().toString()))
-                {
+                    && !Constantes.SPECIAL_DIRS.contains(p.getFileName().toString())) {
+
                     cleanTree(p);
                 }
             }

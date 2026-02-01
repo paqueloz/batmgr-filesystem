@@ -28,11 +28,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +44,9 @@ public class DirChecker {
      * @throws InvalidIndexException
      * @throws NoSuchAlgorithmException
      */
-    public void indexFolder(Path path) throws IOException, InvalidIndexException, NoSuchAlgorithmException
-    {
+    public void indexFolder(Path path) throws IOException, InvalidIndexException,
+        NoSuchAlgorithmException, NotIndexableException {
+
         DirInfo index = new DirInfo(path);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path p : stream) { // cannot use stream.forEach because of IOException
@@ -68,7 +65,8 @@ public class DirChecker {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public void indexTree(Path path) throws NoSuchAlgorithmException, IOException, InvalidIndexException
+    public void indexTree(Path path) throws NoSuchAlgorithmException, IOException,
+        InvalidIndexException, NotIndexableException
     {
         indexFolder(path);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
@@ -90,7 +88,8 @@ public class DirChecker {
      * @throws IOException
      * @throws InvalidIndexException
      */
-    public void listDuplicates(Path path, long threshold) throws IOException, InvalidIndexException
+    public void listDuplicates(Path path, long threshold) throws IOException,
+        InvalidIndexException, NotIndexableException
     {
         HashMap<String, ArrayList<Object>> everything = new HashMap<>();
         log.info("counting folders");
@@ -143,7 +142,7 @@ public class DirChecker {
      * @throws InvalidIndexException
      */
     public int findEverything(Path path, HashMap<String, ArrayList<Object>> everything, int total,
-        int current, long threshold) throws IOException, InvalidIndexException
+        int current, long threshold) throws IOException, InvalidIndexException, NotIndexableException
     {
         int result = 1;
         DirInfo index = new DirInfo(path);
@@ -174,7 +173,7 @@ public class DirChecker {
     private void recordDir(Path path, DirInfo index, HashMap<String, ArrayList<Object>> everything,
         long threshold)
     {
-        for (FileInfo current : index.getFiles()) {
+        for (FileInfo current : index.getNameIndex().values()) {
             if (current.getSize() < threshold) {
                 continue;
             }
@@ -249,10 +248,8 @@ public class DirChecker {
      * indexed. Doesn't check that the index is up to date.
      * @param path directory to index
      * @throws IOException if a disk error occurs
-     * @throws InvalidIndexException
-     * @throws NoSuchAlgorithmException
      */
-    public void sweepFolder(Path path) throws IOException, InvalidIndexException, NoSuchAlgorithmException
+    public void sweepFolder(Path path) throws IOException, InvalidIndexException, NotIndexableException
     {
         DirInfo index = new DirInfo(path);
         Map<String, FileInfo> nameIndex = index.getNameIndex();
